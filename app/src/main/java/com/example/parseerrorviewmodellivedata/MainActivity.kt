@@ -2,12 +2,17 @@ package com.example.parseerrorviewmodellivedata
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import androidx.lifecycle.ViewModelProvider
 
 class MainActivity : AppCompatActivity() {
+
+    private var hasTwoContainers = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        
+        hasTwoContainers = findViewById<View>(R.id.imageFragmentContainer2) != null
 
         val imageViewModel = ViewModelProvider(this)[ImageViewModel::class.java]
 
@@ -26,20 +31,35 @@ class MainActivity : AppCompatActivity() {
             R.drawable.twelve,
         )
 
-
-        imageViewModel.setSelectedImage(R.drawable.one)
-        imageViewModel.setImages(dessert_images)
-
         val fragment1 = ImageListFragment()
-        val fragment2 = ImageDisplayFragment()
 
         if(savedInstanceState == null)
             supportFragmentManager
                 .beginTransaction()
                 .add(R.id.imageFragmentContainer1, fragment1)
-                .add(R.id.imageFragmentContainer2, fragment2)
                 .addToBackStack(null)
                 .setReorderingAllowed(true)
                 .commit()
+
+        if(hasTwoContainers)
+            supportFragmentManager
+                .beginTransaction()
+                .add(R.id.imageFragmentContainer2, ImageDisplayFragment())
+                .commit()
+
+        imageViewModel.setImages(dessert_images)
+
+        imageViewModel.getSelectedImage().observe(this){
+            if(!imageViewModel.hasSeenSelection && !hasTwoContainers) {
+                supportFragmentManager
+                    .beginTransaction()
+                    .replace(R.id.imageFragmentContainer1, ImageDisplayFragment())
+                    .setReorderingAllowed(true)
+                    .addToBackStack(null)
+                    .commit()
+
+                imageViewModel.hasSeenSelection = true
+            }
+        }
     }
 }
